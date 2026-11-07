@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#3D5A36">
+<meta name="robots" content="noindex, nofollow">
+<title>Agrocele</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icono-192.png">
+<link rel="apple-touch-icon" href="icono-192.png">
+<style>
+  :root{--papel:#F2F3EE;--tinta:#23291F;--suave:#5E6758;--campo:#3D5A36}
+  html,body{margin:0;height:100%;background:var(--papel);color:var(--tinta);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+  #app{position:fixed;inset:0;width:100%;height:100%;border:0;display:block;background:var(--papel)}
+  #portada{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:var(--campo);color:#fff;transition:opacity .35s ease;z-index:2;padding:24px;text-align:center}
+  #portada img{width:96px;height:96px;border-radius:22px}
+  #portada p{margin:0;opacity:.85}
+  #portada.oculta{opacity:0;pointer-events:none}
+  #portada button{font:inherit;font-weight:600;padding:10px 22px;border-radius:8px;border:0;background:#E3B53B;color:#23291F}
+  #portada button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+  .barra{width:120px;height:4px;border-radius:2px;background:rgba(255,255,255,.2);overflow:hidden}
+  .barra span{display:block;width:40%;height:100%;background:#E3B53B;animation:ir 1.1s ease-in-out infinite}
+  @keyframes ir{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+  @media (prefers-reduced-motion:reduce){.barra span{animation:none;width:100%}#portada{transition:none}}
+</style>
+</head>
+<body>
+<div id="portada" role="status" aria-live="polite">
+  <img src="icono-192.png" alt="">
+  <div class="barra" id="barra"><span></span></div>
+  <p id="mensaje">Abriendo Agrocele…</p>
+  <button type="button" id="reintentar" hidden>Reintentar</button>
+</div>
+<iframe id="app" title="Agrocele" allow="camera; clipboard-read; clipboard-write; fullscreen"></iframe>
+<script>
+// Dirección de la app (Implementación web de Apps Script). Si algún día cambia, se cambia solo aquí.
+const URL_APP = 'https://script.google.com/macros/s/AKfycbytXDSYInpD6y6GW7XKmcV-UlrAIllRSkGOLpEl8wmNXnbZOAEeWYR1Ejr06qtT8zqh/exec';
+
+const portada = document.getElementById('portada');
+const marco = document.getElementById('app');
+const mensaje = document.getElementById('mensaje');
+const reintentar = document.getElementById('reintentar');
+const barra = document.getElementById('barra');
+let espera = null;
+
+function avisar(texto) {
+  mensaje.textContent = texto;
+  barra.hidden = true;
+  reintentar.hidden = false;
+  portada.classList.remove('oculta');
+}
+function abrir() {
+  if (!navigator.onLine) { avisar('Sin conexión a internet. Conéctate y pulsa Reintentar.'); return; }
+  mensaje.textContent = 'Abriendo Agrocele…';
+  barra.hidden = false;
+  reintentar.hidden = true;
+  portada.classList.remove('oculta');
+  clearTimeout(espera);
+  espera = setTimeout(() => avisar('Está tardando más de lo normal. Revisa la conexión y pulsa Reintentar.'), 30000);
+  marco.src = URL_APP + (URL_APP.includes('?') ? '&' : '?') + 't=' + Date.now();
+}
+marco.addEventListener('load', () => {
+  if (!marco.src) return;
+  clearTimeout(espera);
+  portada.classList.add('oculta');
+});
+reintentar.addEventListener('click', abrir);
+window.addEventListener('offline', () => avisar('Sin conexión a internet. Conéctate y pulsa Reintentar.'));
+window.addEventListener('online', () => { if (!reintentar.hidden) abrir(); });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+abrir();
+</script>
+</body>
+</html>
